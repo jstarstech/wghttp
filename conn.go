@@ -30,10 +30,10 @@ func (c *connBind) Open(port uint16) ([]conn.ReceiveFunc, uint16, error) {
 	newFNs := make([]conn.ReceiveFunc, 0, len(fns))
 	for i := range fns {
 		f := fns[i]
-		newFNs = append(newFNs, func(b []byte) (n int, ep conn.Endpoint, err error) {
-			n, ep, err = f(b)
+		newFNs = append(newFNs, func(b [][]byte, sizes []int, ep []conn.Endpoint) (n int, err error) {
+			n, err = f(b, sizes, ep)
 			if len(b) > 4 {
-				copy(b[1:4], []byte{0, 0, 0})
+				copy(b[0][1:4], []byte{0, 0, 0})
 			}
 			return
 		})
@@ -41,13 +41,15 @@ func (c *connBind) Open(port uint16) ([]conn.ReceiveFunc, uint16, error) {
 	return newFNs, actualPort, err
 }
 
+func (c *connBind) BatchSize() int { return c.defaultBind.BatchSize() }
+
 func (c *connBind) Close() error { return c.defaultBind.Close() }
 
 func (c *connBind) SetMark(mark uint32) error { return c.defaultBind.SetMark(mark) }
 
-func (c *connBind) Send(b []byte, ep conn.Endpoint) error {
+func (c *connBind) Send(b [][]byte, ep conn.Endpoint) error {
 	if len(b) > 4 {
-		copy(b[1:4], c.clientID)
+		copy(b[0][1:4], c.clientID)
 	}
 	return c.defaultBind.Send(b, ep)
 }
