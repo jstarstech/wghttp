@@ -41,7 +41,17 @@ jobs:
         pre_command: export CGO_ENABLED=0
         github_token: ${{ secrets.GITHUB_TOKEN }}
         goos: windows
-        goarch: [386, amd64]
+        goarch: 386
+        build_flags: -tags systray
+        ldflags: -H=windowsgui -s -w
+        binary_name: wghttp-gui
+    - name: Go Release Binaries Large Disk
+      uses: wangyoucao577/go-release-action@v1
+      with:
+        pre_command: export CGO_ENABLED=0
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        goos: windows
+        goarch: amd64
         build_flags: -tags systray
         ldflags: -H=windowsgui -s -w
         binary_name: wghttp-gui
