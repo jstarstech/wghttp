@@ -35,23 +35,21 @@ jobs:
         goos: ${{ matrix.goos }}
         goarch: ${{ matrix.goarch }}
         binary_name: "wghttp"
-    - name: Go Release Binaries Large Disk
-      uses: wangyoucao577/go-release-action@v1
+  release-linux-amd64-2:
+    name: release linux/amd64
+    runs-on: ubuntu-22.04
+    strategy:
+      matrix:
+        goos: [windows]
+        goarch: [386, amd64]
+    steps:
+    - uses: actions/checkout@v3
+    - uses: wangyoucao577/go-release-action@v1
       with:
         pre_command: export CGO_ENABLED=0
         github_token: ${{ secrets.GITHUB_TOKEN }}
-        goos: windows
-        goarch: 386
-        build_flags: -tags systray
-        ldflags: -H=windowsgui -s -w
-        binary_name: wghttp-gui
-    - name: Go Release Binaries Large Disk
-      uses: wangyoucao577/go-release-action@v1
-      with:
-        pre_command: export CGO_ENABLED=0
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        goos: windows
-        goarch: amd64
+        goos: ${{ matrix.goos }}
+        goarch: ${{ matrix.goarch }}
         build_flags: -tags systray
         ldflags: -H=windowsgui -s -w
         binary_name: wghttp-gui
