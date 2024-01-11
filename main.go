@@ -15,6 +15,7 @@ import (
 	"golang.zx2c4.com/wireguard/tun/netstack"
 
 	"github.com/zhsj/wghttp/internal/proxy"
+	"github.com/zhsj/wghttp/systray"
 )
 
 //go:embed README.md
@@ -44,24 +45,47 @@ func main() {
 	}
 	logger.Verbosef("Options: %+v", opts)
 
-	dev, tnet, err := setupNet()
-	if err != nil {
-		logger.Errorf("Setup netstack: %v", err)
-		os.Exit(1)
+	var (
+		dev      *device.Device
+		tnet     *netstack.Net
+		listener net.Listener
+	)
+
+	connect := func() {
+		var (
+			err error
+		)
+
+		dev, tnet, err = setupNet()
+
+		if err != nil {
+			logger.Errorf("Setup netstack: %v", err)
+			os.Exit(1)
+		}
+
+		listener, err = proxyListener(tnet)
+		if err != nil {
+			logger.Errorf("Create net listener: %v", err)
+			os.Exit(1)
+		}
+
+		proxier := proxy.Proxy{
+			Dial: proxyDialer(tnet), DNS: opts.DNS, Stats: stats(dev),
+		}
+		proxier.Serve(listener)
 	}
 
-	listener, err := proxyListener(tnet)
-	if err != nil {
-		logger.Errorf("Create net listener: %v", err)
-		os.Exit(1)
+	disconnect := func() {
+		listener.Close()
+		dev.Close()
 	}
 
-	proxier := proxy.Proxy{
-		Dial: proxyDialer(tnet), DNS: opts.DNS, Stats: stats(dev),
+	if systray.WithSystray {
+		go connect()
+		systray.Run(connect, disconnect)
+	} else {
+		connect()
 	}
-	proxier.Serve(listener)
-
-	os.Exit(1)
 }
 
 func proxyDialer(tnet *netstack.Net) (dialer func(ctx context.Context, network, address string) (net.Conn, error)) {
